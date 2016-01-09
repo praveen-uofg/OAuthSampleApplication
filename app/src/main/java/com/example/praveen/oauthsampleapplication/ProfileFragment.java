@@ -1,25 +1,26 @@
 package com.example.praveen.oauthsampleapplication;
 
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Matrix;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Html;
 import android.text.method.LinkMovementMethod;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.praveen.oauthsampleapplication.utils.AppCommon;
+import com.example.praveen.oauthsampleapplication.utils.UserInfo;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -47,7 +48,7 @@ public class ProfileFragment extends Fragment{
     private static final String ARG_PARAM1 = "accessToken";
     private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
+    private ProgressDialog dialog;
     private String mAccessToken;
     private String mNetwork;
     private boolean mEmptyView = false;
@@ -56,6 +57,7 @@ public class ProfileFragment extends Fragment{
     private TextView mBithdayTextView;
     private TextView mEmailTextView;
     private TextView mProfileLinkTextView;
+    private LinearLayout mLinearLayout;
 
     private String name;
     private String birthday;
@@ -64,6 +66,9 @@ public class ProfileFragment extends Fragment{
     private String relationShip;
     private Bitmap profileBitmap;
     private String profileLink;
+    String accessToken = null;
+
+    private UserInfo userInfo;
 
     private OnProfileFragmentInteractionListener mListener;
 
@@ -88,21 +93,38 @@ public class ProfileFragment extends Fragment{
             mAccessToken = getArguments().getString(ARG_PARAM1);
             mNetwork = getArguments().getString(ARG_PARAM2);
         }
+        userInfo = new UserInfo();
+        loadProfile();
+    }
+
+    private void loadProfile() {
+
         if (mAccessToken != null) {
             mEmptyView = false;
-            String profileUrl = AppCommon.getFBProfileUrl(mAccessToken);
-            new GetProfileInfoAsyncTask().execute(profileUrl);
+            accessToken = mAccessToken;
         } else {
             SharedPreferences preferences = getActivity().getSharedPreferences("user_info", 0);
-            String accessToken = preferences.getString("access_token", null);
-            if (accessToken != null) {
-                mEmptyView = false;
-                String profileUrl = AppCommon.getFBProfileUrl(accessToken);
-                new GetProfileInfoAsyncTask().execute(profileUrl);
-            } else {
-                mEmptyView = true;
+            if (mNetwork.equals(AppCommon.FB_NETWORK)) {
+                accessToken = preferences.getString(AppCommon.FB_ACCESS_TOKEN, null);
+            } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+                accessToken = preferences.getString(AppCommon.LINKEDIN_ACCESS_TOKEN, null);
             }
         }
+        if (accessToken != null) {
+            mEmptyView = false;
+            new GetProfileInfoAsyncTask().execute(getProfileUrl(accessToken));
+        } else {
+            mEmptyView = true;
+        }
+    }
+
+    private String getProfileUrl(String token) {
+        if (mNetwork.equals(AppCommon.FB_NETWORK)) {
+            return AppCommon.getFBProfileUrl(token);
+        } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+            return AppCommon.getLinkedInProfileUrl(token);
+        }
+        return null;
     }
 
     @Override
@@ -113,6 +135,8 @@ public class ProfileFragment extends Fragment{
            view  = inflater.inflate(R.layout.empty_layout, container, false);
         } else {
             view = inflater.inflate(R.layout.fragment_profile, container, false);
+            mLinearLayout = (LinearLayout)view.findViewById(R.id.mainLayout);
+            mLinearLayout.setVisibility(View.INVISIBLE);
         }
         initViews(view);
         return view;
@@ -121,7 +145,11 @@ public class ProfileFragment extends Fragment{
     private void initViews(View view) {
         if (mEmptyView) {
             ImageButton connect = (ImageButton)view.findViewById(R.id.connectButton);
-            // TODO: ADD drawabel to button as per network
+            if (mNetwork.equals(AppCommon.FB_NETWORK)) {
+                connect.setImageResource(R.drawable.ic_fb_connect);
+            } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+                connect.setImageResource(R.drawable.linkedin_button_selector);
+            }
             connect.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -134,13 +162,6 @@ public class ProfileFragment extends Fragment{
             mEmailTextView = (TextView)view.findViewById(R.id.profileEmail);
             mBithdayTextView = (TextView)view.findViewById(R.id.profileBirthday);
             mProfileLinkTextView = (TextView)view.findViewById(R.id.profileLink);
-        }
-    }
-
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed() {
-        if (mListener != null) {
-            mListener.onConnectButtonPressed(mNetwork);
         }
     }
 
@@ -164,6 +185,16 @@ public class ProfileFragment extends Fragment{
     class GetProfileInfoAsyncTask extends AsyncTask<String, Void, Void> {
 
         @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            dialog = new ProgressDialog(getActivity());
+            dialog.setMessage("Loading...");
+            dialog.setCancelable(false);
+            dialog.setIndeterminate(true);
+            dialog.show();
+        }
+
+        @Override
         protected Void doInBackground(String... urls) {
             if (urls.length > 0) {
                 String profileUrl = urls[0];
@@ -173,6 +204,11 @@ public class ProfileFragment extends Fragment{
                     HttpURLConnection connection = (HttpURLConnection)url.openConnection();
                     connection.setRequestMethod("GET");
                     connection.setDoInput(true);
+
+                    if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+                        connection.setRequestProperty("Authorization","Bearer "+accessToken );
+                    }
+
                     connection.connect();
 
                     if (connection.getResponseCode() == 200 || connection.getResponseCode() == 201) {
@@ -183,8 +219,14 @@ public class ProfileFragment extends Fragment{
                             jsonString.append(line + "\n");
                         }
                         br.close();
+
+                        Log.v("LinkedIN Json"," json = "+jsonString.toString());
                         JSONObject jsonObject = new JSONObject(jsonString.toString());
-                        parseJsonData(jsonObject);
+                        if (mNetwork.equals(AppCommon.FB_NETWORK)) {
+                            parseFbJsonData(jsonObject);
+                        } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+                            parseLinkedInProfileData(jsonObject);
+                        }
                     }
                 } catch (MalformedURLException e) {
                     e.printStackTrace();
@@ -197,16 +239,36 @@ public class ProfileFragment extends Fragment{
             return null;
         }
 
-        private void parseJsonData(JSONObject jsonObject) {
+        private void parseFbJsonData(JSONObject jsonObject) {
             try {
-                name = jsonObject.has("name")?jsonObject.getString("name") : null;
-                email = jsonObject.has("email")?jsonObject.getString("email") : null;
-                birthday = jsonObject.has("birthday")?jsonObject.getString("birthday") : null;
-                relationShip = jsonObject.has("relationship_status")?jsonObject.getString("relationship_status") : null;
-                JSONObject coverObject = jsonObject.optJSONObject("cover");
-                coverUrl = coverObject.has("source")? (String) coverObject.get("source") :null;
-                profileBitmap = getProfileImage(coverUrl);
-                profileLink = jsonObject.has("link")?jsonObject.getString("link"):null;
+                userInfo.setName(jsonObject.has("name")?jsonObject.getString("name") : null);
+                userInfo.setEmail(jsonObject.has("email")?jsonObject.getString("email") : null);
+                userInfo.setBirthday(jsonObject.has("birthday")?jsonObject.getString("birthday") : null);
+
+                JSONObject locationObject = jsonObject.optJSONObject("hometown");
+                userInfo.setLocation(locationObject.has("name")?locationObject.getString("name") : null);
+
+                JSONObject picObject = jsonObject.optJSONObject("picture").optJSONObject("data");
+                userInfo.setCoverUrl(picObject.has("url")? (String) picObject.get("url") :null);
+                profileBitmap = getProfileImage(userInfo.getCoverUrl());
+
+                JSONObject friendObject = jsonObject.optJSONObject("friends").optJSONObject("summary");
+                userInfo.setFriendCount(friendObject.has("total_count")?friendObject.getInt("total_count"):0);
+
+                userInfo.setProfileLink(jsonObject.has("link")?jsonObject.getString("link"):null);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void parseLinkedInProfileData(JSONObject jsonObject) {
+            try {
+                userInfo.setName(jsonObject.has("formattedName")?jsonObject.getString("formattedName") : null);
+                userInfo.setEmail(jsonObject.has("emailAddress")?jsonObject.getString("emailAddress") : null);
+                userInfo.setCoverUrl(jsonObject.has("pictureUrl")?jsonObject.getString("pictureUrl"):null);
+                userInfo.setFriendCount(jsonObject.has("numConnections")?jsonObject.getInt("numConnections"):0);
+                userInfo.setHeadline(jsonObject.has("headline")?jsonObject.getString("headline"): null);
+                userInfo.setProfileLink(jsonObject.has("siteStandardProfileRequest")?jsonObject.getString("siteStandardProfileRequest"):null);
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -221,24 +283,8 @@ public class ProfileFragment extends Fragment{
                 urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.setConnectTimeout(30000);
                 urlConnection.connect();
-
                 InputStream in = urlConnection.getInputStream();
-
-                /*final BitmapFactory.Options options = new BitmapFactory.Options();
-                options.inJustDecodeBounds = true;
-                BitmapFactory.decodeStream(in,null,options);*/
-                DisplayMetrics display = new DisplayMetrics();
-                getActivity().getWindowManager().getDefaultDisplay().getMetrics(display);
-                float screenWidth = display.scaledDensity;
-                float screenHeight = display.scaledDensity;
-                /*options.inSampleSize = AppCommon.calculateInSampleSize(options,screenHeight/2,screenWidth);
-                options.inJustDecodeBounds = false;*/
-
-                Bitmap bitmapOrig = BitmapFactory.decodeStream(in);
-                Matrix matrix = new Matrix();
-                matrix.postScale(screenWidth,screenHeight);
-
-                bitmap = Bitmap.createBitmap(BitmapFactory.decodeStream(in),0,0,bitmapOrig.getWidth(),bitmapOrig.getHeight(),matrix,true);
+                bitmap = BitmapFactory.decodeStream(in);
                 in.close();
                 urlConnection.disconnect();
             } catch (MalformedURLException e) {
@@ -253,14 +299,23 @@ public class ProfileFragment extends Fragment{
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
             Log.v("ProfileInfo","name = "+name+" email = "+email+" birthday = "+birthday+" cover = "+coverUrl);
-            mEmailTextView.setText(email);
-            mNameTextView.setText(name);
-            mBithdayTextView.setText(birthday);
-            String link = "<a href = "+"'"+profileLink+"'"+">"+profileLink+"</a>";
+
+            mEmailTextView.setText(userInfo.getEmail());
+            mNameTextView.setText(userInfo.getName());
+            mBithdayTextView.setText(userInfo.getBirthday());
+            String link = "<a href = "+"'"+userInfo.getProfileLink()+"'"+">"+userInfo.getProfileLink()+"</a>";
             mProfileLinkTextView.setText(Html.fromHtml(link));
             mProfileLinkTextView.setMovementMethod(LinkMovementMethod.getInstance());
-            //Drawable drawable = new BitmapDrawable(getActivity().getResources(),profileBitmap);
-            mProfileImage.setImageBitmap(profileBitmap);
+
+            if (profileBitmap != null) {
+                mProfileImage.setImageBitmap(profileBitmap);
+            } else {
+                mProfileImage.setImageResource(R.drawable.default_avatar);
+            }
+            if (dialog != null && dialog.isShowing()) {
+                dialog.dismiss();
+                mLinearLayout.setVisibility(View.VISIBLE);
+            }
         }
     }
 
@@ -275,7 +330,6 @@ public class ProfileFragment extends Fragment{
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnProfileFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onConnectButtonPressed(String network);
     }
 }

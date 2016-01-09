@@ -139,6 +139,7 @@ public class WebViewFragment extends Fragment {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            Log.i("URL","url = "+url);
             if (url.startsWith(AppCommon.FB_APP_REDIRECT_URL) || url.startsWith(AppCommon.LINKEDIN_APP_REDIRECT_URL)) {
                 Log.i("Authorize", "");
                 Uri uri = Uri.parse(url);

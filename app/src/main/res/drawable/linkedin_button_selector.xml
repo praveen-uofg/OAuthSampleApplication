@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/ic_linkedin_signin_default"/>
+    <item android:state_hovered="true" android:drawable="@drawable/ic_linkedin_signin_default_hover"/>
+    <item android:state_focused="true" android:drawable="@drawable/ic_linkedin_signin_default_hover"/>
+    <item android:state_active="true" android:drawable="@drawable/ic_linked_sign_in_active"/>
+
+</selector>

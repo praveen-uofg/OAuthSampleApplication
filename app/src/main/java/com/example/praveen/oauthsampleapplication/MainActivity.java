@@ -52,7 +52,7 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.nav_facebook) {
             startProfileFragment(AppCommon.FB_NETWORK);
         } else if (id == R.id.nav_linkedIn) {
-           invokeWebview(AppCommon.LINKEDIN_NETWORK);
+            startProfileFragment(AppCommon.LINKEDIN_NETWORK);
         } else if (id == R.id.nav_twitter) {
 
         }

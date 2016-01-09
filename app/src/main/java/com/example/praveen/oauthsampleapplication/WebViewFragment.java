@@ -84,9 +84,9 @@ public class WebViewFragment extends Fragment {
         mProgress = new ProgressDialog(getActivity());
         mProgress.setMessage("Loading");
 
-        if (mNetwork == AppCommon.FB_NETWORK) {
+        if (mNetwork.equals(AppCommon.FB_NETWORK)) {
             webView.loadUrl(AppCommon.getFBAuthenticationUrl());
-        } else if (mNetwork == AppCommon.LINKEDIN_NETWORK){
+        } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)){
             webView.loadUrl(AppCommon.getLinkedInAuthURL());
         }
     }
@@ -159,7 +159,7 @@ public class WebViewFragment extends Fragment {
                 Log.i("Authorize", "accessTokenUrl = "+accessTokenUrl);
 
                 if (accessTokenUrl != null) {
-                    new GetAccessTokenAsyncTask().execute(new String[]{accessTokenUrl});
+                    new GetAccessTokenAsyncTask().execute(accessTokenUrl);
                 }
 
             } else if (url.contains(AppCommon.DISPLAY_STRING)) {
@@ -172,9 +172,9 @@ public class WebViewFragment extends Fragment {
     }
 
     private String getAccessTokenUrl(String authorizationToken) {
-        if (mNetwork == AppCommon.FB_NETWORK) {
+        if (mNetwork.equals(AppCommon.FB_NETWORK)) {
             return AppCommon.getFBAccessTokenUrl(authorizationToken);
-        } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+        } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
             return AppCommon.getLinkedInAccessTokenURL(authorizationToken);
         }
         return  null;
@@ -198,9 +198,9 @@ public class WebViewFragment extends Fragment {
                 try {
                     URL url = new URL(tokenUrl);
                     HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-                    if (mNetwork == AppCommon.FB_NETWORK) {
+                    if (mNetwork.equals(AppCommon.FB_NETWORK)) {
                         connection.setRequestMethod("GET");
-                    } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+                    } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
                         connection.setRequestMethod("POST");
                     }
                     connection.setDoInput(true);
@@ -242,10 +242,10 @@ public class WebViewFragment extends Fragment {
                     long expireDate = calendar.getTimeInMillis();
                     SharedPreferences preferences = getActivity().getSharedPreferences("user_info",0);
                     SharedPreferences.Editor editor = preferences.edit();
-                    if (mNetwork == AppCommon.FB_NETWORK) {
+                    if (mNetwork.equals(AppCommon.FB_NETWORK)) {
                         editor.putLong(AppCommon.FB_TOKEN_EXPIRE_TIME,expireDate);
                         editor.putString(AppCommon.FB_ACCESS_TOKEN,mAccessToken);
-                    } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+                    } else if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
                         editor.putLong(AppCommon.LINKEDIN_TOKEN_EXPIRE_TIME,expireDate);
                         editor.putString(AppCommon.LINKEDIN_ACCESS_TOKEN,mAccessToken);
                     }

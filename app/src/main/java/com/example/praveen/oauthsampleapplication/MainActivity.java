@@ -8,7 +8,6 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.text.TextUtils;
 import android.view.MenuItem;
 
 import com.example.praveen.oauthsampleapplication.utils.AppCommon;
@@ -51,9 +50,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_facebook) {
-            startProfileFragment("fb");
+            startProfileFragment(AppCommon.FB_NETWORK);
         } else if (id == R.id.nav_linkedIn) {
-
+           invokeWebview(AppCommon.LINKEDIN_NETWORK);
         } else if (id == R.id.nav_twitter) {
 
         }
@@ -71,27 +70,12 @@ public class MainActivity extends AppCompatActivity
         transaction.commit();
     }
 
-    private void invokeFBWebview() {
-        WebViewFragment fragment = WebViewFragment.newInstance(getAuthenticationUrl(),AppCommon.FB_NETWORK);
+    private void invokeWebview(String network) {
+        WebViewFragment fragment = WebViewFragment.newInstance(network);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.containerFrame,fragment);
         transaction.addToBackStack(null);
         transaction.commit();
-    }
-
-    public  String getAuthenticationUrl() {
-         String authRequestRedirect =
-                 AppCommon.FB_APP_OAUTH_BASEURL+AppCommon.APP_OAUTH_URL
-                + "?client_id="+AppCommon.FB_APP_ID
-                + "&response_type=code"
-                + "&display=touch"
-                + "&scope=" + TextUtils.join(",", AppCommon.FB_APP_PERMISSIONS)
-                + "&redirect_uri="+AppCommon.FB_APP_REDIRECT_URL
-                + "&"
-                +AppCommon.STATE_PARAM + "="
-                +AppCommon.STATE
-        ;
-        return authRequestRedirect;
     }
 
     @Override
@@ -105,6 +89,6 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onConnectButtonPressed(String network) {
-        invokeFBWebview();
+        invokeWebview(network);
     }
 }

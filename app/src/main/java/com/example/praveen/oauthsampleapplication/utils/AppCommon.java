@@ -11,6 +11,7 @@ public class AppCommon {
     public static final String FB_NETWORK = "facebook";
     public static final String LINKEDIN_NETWORK = "linkedin";
 
+    /**Facebook Constant*/
     public static final String FB_APP_ID = "458542597687422";
     public static final String FB_APP_PERMISSIONS [] = new String[] {"public_profile ","user_birthday","user_relationships","user_hometown",
                                                                     "email","link"};
@@ -18,14 +19,20 @@ public class AppCommon {
     public static final String FB_APP_OAUTH_BASEURL = "https://m.facebook.com/dialog";
     public static final String FB_ACCESS_TOKEN_URL = "https://graph.facebook.com/v2.5";
     public static final String FB_APP_CLIENT_SECRET = "b322828853c857f6d6a88d795536049f";
+    public static final String FB_ACCESS_TOKEN = "fb_access_token";
+    public static final String FB_TOKEN_EXPIRE_TIME = "fb_expire_time";
 
-
+    /**Linked In Constant*/
     public static final String LINKEDIN_APP_ID = "75f5adnmadabvf";
-    public static final String LINKEDIN_APP_ID_APP_CLIENT_SECRET = "J9RVEPehFZLjOzgE";
-    public static final String LINKEDIN_APP_ID_APP_PERMISSIONS [] = new String[] {"r_basicprofile","r_emailaddress"};
-    public static final String LINKEDIN_APP_ID_APP_REDIRECT_URL = "https://co.example.praveen.oauthsampleapplication.redirecturl";
-    public static final String LINKEDIN_APP_ID_APP_OAUTH_BASEURL = "https://www.linkedin.com/uas/oauth2/authorization";
-    public static final String LINKEDIN_APP_ID_ACCESS_TOKEN_URL = "https://www.linkedin.com/uas/oauth2/accessToken";
+    public static final String LINKEDIN_APP_CLIENT_SECRET = "J9RVEPehFZLjOzgE";
+    public static final String LINKEDIN_APP_PERMISSIONS[] = new String[] {"r_basicprofile","r_emailaddress"};
+    public static final String LINKEDIN_APP_REDIRECT_URL = "https://co.example.praveen.oauthsampleapplication.redirecturl";
+    public static final String LINKEDIN_APP_OAUTH_BASEURL = "https://www.linkedin.com/uas/oauth2/authorization";
+    public static final String LINKEDIN_ACCESS_TOKEN_URL = "https://www.linkedin.com/uas/oauth2/accessToken";
+    public static final String LINKEDIN_PROFILE_URL = "https://api.linkedin.com/v1/people/~";
+    public static final String LINKEDIN_OAUTH_ACCESS_TOKEN_PARAM ="oauth2_access_token";
+    public static final String LINKEDIN_ACCESS_TOKEN = "linkedin_access_token";
+    public static final String LINKEDIN_TOKEN_EXPIRE_TIME = "linkedin_expire_time";
 
 
     public static final String CLIENT_ID_PARAM = "client_id";
@@ -36,13 +43,13 @@ public class AppCommon {
     public static final String CLIENT_SECRET_PARAM = "client_secret";
     public static final String RESPONSE_PARAM = "code";
     public static final String APP_OAUTH_URL = "/oauth";
-
-
-
-
+    private static final String RESPONSE_TYPE_PARAM = "response_type";
+    private static final String GRANT_TYPE_PARAM = "grant_type";
+    private static final String GRANT_TYPE = "authorization_code";
     public static final String STATE_PARAM = "state";
     public static final String STATE = "hdwvdbwdhiw";
     public static final String DISPLAY_STRING = "touch";
+
 
 
     public static String getFBProfileUrl(String accessToken) {
@@ -58,6 +65,21 @@ public class AppCommon {
         return profileUrl;
     }
 
+    public static String getFBAccessTokenUrl(String authorizationToken) {
+        String accessTokenUrl = AppCommon.FB_ACCESS_TOKEN_URL
+                + AppCommon.APP_OAUTH_URL
+                + "/access_token?"
+                + AppCommon.CLIENT_ID_PARAM + AppCommon.EQUALS_PARAM +AppCommon.FB_APP_ID
+                + AppCommon.AMPERSAND_PARAM
+                + AppCommon.REDIRECT_URI_PARAM +AppCommon.EQUALS_PARAM + AppCommon.FB_APP_REDIRECT_URL
+                + AppCommon.AMPERSAND_PARAM
+                + AppCommon.CLIENT_SECRET_PARAM + AppCommon.EQUALS_PARAM + AppCommon.FB_APP_CLIENT_SECRET
+                + AppCommon.AMPERSAND_PARAM
+                + AppCommon.RESPONSE_PARAM + AppCommon.EQUALS_PARAM + authorizationToken
+                ;
+        return accessTokenUrl;
+    }
+
     public static String getFBAuthenticationUrl() {
         String authRequestRedirect =
                 AppCommon.FB_APP_OAUTH_BASEURL+AppCommon.APP_OAUTH_URL
@@ -71,6 +93,32 @@ public class AppCommon {
                         +AppCommon.STATE
                 ;
         return authRequestRedirect;
+    }
+
+    public static String getLinkedInAuthURL() {
+        String authenticationUrl = LINKEDIN_APP_OAUTH_BASEURL
+                +QUESTION_MARK + RESPONSE_TYPE_PARAM +EQUALS_PARAM +  RESPONSE_PARAM
+                +AMPERSAND_PARAM + CLIENT_ID_PARAM + EQUALS_PARAM + LINKEDIN_APP_ID
+                +AMPERSAND_PARAM + REDIRECT_URI_PARAM + EQUALS_PARAM + LINKEDIN_APP_REDIRECT_URL
+                +AMPERSAND_PARAM + STATE_PARAM + EQUALS_PARAM + STATE
+                +AMPERSAND_PARAM + "scope" + EQUALS_PARAM + TextUtils.join(",", LINKEDIN_APP_PERMISSIONS)
+                ;
+        return authenticationUrl;
+    }
+
+    public static String getLinkedInAccessTokenURL(String authorizationCode) {
+        return LINKEDIN_ACCESS_TOKEN_URL
+                + QUESTION_MARK + GRANT_TYPE_PARAM + EQUALS_PARAM + GRANT_TYPE
+                + AMPERSAND_PARAM + RESPONSE_PARAM + EQUALS_PARAM + authorizationCode
+                + AMPERSAND_PARAM + REDIRECT_URI_PARAM + LINKEDIN_APP_REDIRECT_URL
+                + AMPERSAND_PARAM + CLIENT_ID_PARAM + EQUALS_PARAM + LINKEDIN_APP_ID
+                + AMPERSAND_PARAM + CLIENT_SECRET_PARAM + LINKEDIN_APP_CLIENT_SECRET
+                ;
+    }
+
+    public static String getLinkedInProfileUrl(String accessToken) {
+        return LINKEDIN_PROFILE_URL
+                + QUESTION_MARK + LINKEDIN_OAUTH_ACCESS_TOKEN_PARAM + accessToken;
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqH, int reqW) {

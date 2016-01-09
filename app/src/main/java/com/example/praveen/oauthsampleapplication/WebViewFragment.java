@@ -14,7 +14,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.Toast;
 
 import com.example.praveen.oauthsampleapplication.utils.AppCommon;
 
@@ -88,7 +87,7 @@ public class WebViewFragment extends Fragment {
         if (mNetwork == AppCommon.FB_NETWORK) {
             webView.loadUrl(AppCommon.getFBAuthenticationUrl());
         } else if (mNetwork == AppCommon.LINKEDIN_NETWORK){
-            //TODO : LINKEDIN URL
+            webView.loadUrl(AppCommon.getLinkedInAuthURL());
         }
     }
 
@@ -120,7 +119,6 @@ public class WebViewFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
         void onFragmentInteraction(String accessToken);
     }
 
@@ -141,48 +139,44 @@ public class WebViewFragment extends Fragment {
 
         @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
-            if (url.startsWith(AppCommon.FB_APP_REDIRECT_URL)) {
+            if (url.startsWith(AppCommon.FB_APP_REDIRECT_URL) || url.startsWith(AppCommon.LINKEDIN_APP_REDIRECT_URL)) {
                 Log.i("Authorize", "");
                 Uri uri = Uri.parse(url);
-                //We take from the url the authorizationToken and the state token. We have to check that the state token returned by the Service is the same we sent.
-                //If not, that means the request may be a result of CSRF and must be rejected.
+
                 String stateToken = uri.getQueryParameter(AppCommon.STATE_PARAM);
-                if (stateToken == null || !stateToken.equals("hdwvdbwdhiw")) {
+                if (stateToken == null || !stateToken.equals(AppCommon.STATE)) {
                     Log.e("Authorize", "State token doesn't match");
                     return true;
                 }
 
-                //If the user doesn't allow authorization to our application, the authorizationToken Will be null.
-                String authorizationToken = uri.getQueryParameter("code");
+                String authorizationToken = uri.getQueryParameter(AppCommon.RESPONSE_PARAM);
                 if (authorizationToken == null) {
                     Log.i("Authorize", "The user doesn't allow authorization.");
                     return true;
                 }
                 String accessTokenUrl = getAccessTokenUrl(authorizationToken);
-                Toast.makeText(getActivity(),"accessUrl = "+accessTokenUrl,Toast.LENGTH_LONG).show();
                 Log.i("Authorize", "accessTokenUrl = "+accessTokenUrl);
-                new GetAccessTokenAsyncTask().execute(new String []{accessTokenUrl});
+
+                if (accessTokenUrl != null) {
+                    new GetAccessTokenAsyncTask().execute(new String[]{accessTokenUrl});
+                }
 
             } else if (url.contains(AppCommon.DISPLAY_STRING)) {
                 return false;
+            } else {
+                webView.loadUrl(url);
             }
             return true;
         }
     }
 
     private String getAccessTokenUrl(String authorizationToken) {
-        String accessTokenUrl = AppCommon.FB_ACCESS_TOKEN_URL
-                + AppCommon.APP_OAUTH_URL
-                + "/access_token?"
-                + AppCommon.CLIENT_ID_PARAM + AppCommon.EQUALS_PARAM +AppCommon.FB_APP_ID
-                + AppCommon.AMPERSAND_PARAM
-                + AppCommon.REDIRECT_URI_PARAM +AppCommon.EQUALS_PARAM + AppCommon.FB_APP_REDIRECT_URL
-                + AppCommon.AMPERSAND_PARAM
-                + AppCommon.CLIENT_SECRET_PARAM + AppCommon.EQUALS_PARAM + AppCommon.FB_APP_CLIENT_SECRET
-                + AppCommon.AMPERSAND_PARAM
-                + AppCommon.RESPONSE_PARAM + AppCommon.EQUALS_PARAM + authorizationToken
-                ;
-        return accessTokenUrl;
+        if (mNetwork == AppCommon.FB_NETWORK) {
+            return AppCommon.getFBAccessTokenUrl(authorizationToken);
+        } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+            return AppCommon.getLinkedInAccessTokenURL(authorizationToken);
+        }
+        return  null;
     }
 
     class GetAccessTokenAsyncTask extends AsyncTask <String, Void, Boolean> {
@@ -203,10 +197,13 @@ public class WebViewFragment extends Fragment {
                 try {
                     URL url = new URL(tokenUrl);
                     HttpURLConnection connection = (HttpURLConnection)url.openConnection();
-                    connection.setRequestMethod("GET");
+                    if (mNetwork == AppCommon.FB_NETWORK) {
+                        connection.setRequestMethod("GET");
+                    } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+                        connection.setRequestMethod("POST");
+                    }
                     connection.setDoInput(true);
                     connection.connect();
-                    int responseCode  = connection.getResponseCode();
                     if (connection.getResponseCode() == 200 || connection.getResponseCode() == 201) {
                         jsonString = new StringBuilder();
                         BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -244,8 +241,13 @@ public class WebViewFragment extends Fragment {
                     long expireDate = calendar.getTimeInMillis();
                     SharedPreferences preferences = getActivity().getSharedPreferences("user_info",0);
                     SharedPreferences.Editor editor = preferences.edit();
-                    editor.putLong("expires",expireDate);
-                    editor.putString("access_token",mAccessToken);
+                    if (mNetwork == AppCommon.FB_NETWORK) {
+                        editor.putLong(AppCommon.FB_TOKEN_EXPIRE_TIME,expireDate);
+                        editor.putString(AppCommon.FB_ACCESS_TOKEN,mAccessToken);
+                    } else if (mNetwork == AppCommon.LINKEDIN_NETWORK) {
+                        editor.putLong(AppCommon.LINKEDIN_TOKEN_EXPIRE_TIME,expireDate);
+                        editor.putString(AppCommon.LINKEDIN_ACCESS_TOKEN,mAccessToken);
+                    }
                     editor.commit();
                 }
             } catch (JSONException e) {

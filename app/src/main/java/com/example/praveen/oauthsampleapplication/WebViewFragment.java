@@ -12,8 +12,6 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.webkit.WebResourceError;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.Toast;
@@ -41,14 +39,11 @@ import java.util.Calendar;
  * create an instance of this fragment.
  */
 public class WebViewFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
+
+    private static final String ARG_NETWORK = "param2";
 
     // TODO: Rename and change types of parameters
-    private String mUrl;
-    private String mParam2;
+    private String mNetwork;
     private WebView webView;
     ProgressDialog mProgress;
 
@@ -58,20 +53,10 @@ public class WebViewFragment extends Fragment {
         // Required empty public constructor
     }
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment WebViewFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static WebViewFragment newInstance(String param1, String param2) {
+    public static WebViewFragment newInstance( String network) {
         WebViewFragment fragment = new WebViewFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putString(ARG_NETWORK, network);
         fragment.setArguments(args);
         return fragment;
     }
@@ -80,15 +65,14 @@ public class WebViewFragment extends Fragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
-            mUrl = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
+            mNetwork = getArguments().getString(ARG_NETWORK);
         }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        // Inflate the layout for this fragment
+
         View view = inflater.inflate(R.layout.fragment_web_view, container, false);
         webView = (WebView)view.findViewById(R.id.webView);
         setUpWebView();
@@ -100,15 +84,13 @@ public class WebViewFragment extends Fragment {
         webView.getSettings().setJavaScriptEnabled(true);
         mProgress = new ProgressDialog(getActivity());
         mProgress.setMessage("Loading");
-        webView.loadUrl(mUrl);
-    }
 
-    // TODO: Rename method, update argument and hook method into UI event
-    /*public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
+        if (mNetwork == AppCommon.FB_NETWORK) {
+            webView.loadUrl(AppCommon.getFBAuthenticationUrl());
+        } else if (mNetwork == AppCommon.LINKEDIN_NETWORK){
+            //TODO : LINKEDIN URL
         }
-    }*/
+    }
 
     @Override
     public void onAttach(Context context) {
@@ -158,12 +140,6 @@ public class WebViewFragment extends Fragment {
         }
 
         @Override
-        public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
-            super.onReceivedError(view, request, error);
-            Toast.makeText(getActivity(),"error  = "+error,Toast.LENGTH_LONG).show();
-        }
-
-        @Override
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             if (url.startsWith(AppCommon.FB_APP_REDIRECT_URL)) {
                 Log.i("Authorize", "");
@@ -195,14 +171,16 @@ public class WebViewFragment extends Fragment {
     }
 
     private String getAccessTokenUrl(String authorizationToken) {
-        String accessTokenUrl = AppCommon.FB_ACCESS_TOKEN_URL + "/access_token?"
+        String accessTokenUrl = AppCommon.FB_ACCESS_TOKEN_URL
+                + AppCommon.APP_OAUTH_URL
+                + "/access_token?"
                 + AppCommon.CLIENT_ID_PARAM + AppCommon.EQUALS_PARAM +AppCommon.FB_APP_ID
                 + AppCommon.AMPERSAND_PARAM
                 + AppCommon.REDIRECT_URI_PARAM +AppCommon.EQUALS_PARAM + AppCommon.FB_APP_REDIRECT_URL
                 + AppCommon.AMPERSAND_PARAM
                 + AppCommon.CLIENT_SECRET_PARAM + AppCommon.EQUALS_PARAM + AppCommon.FB_APP_CLIENT_SECRET
                 + AppCommon.AMPERSAND_PARAM
-                + AppCommon.RESPONSE_TYPE_PARAM + AppCommon.EQUALS_PARAM + authorizationToken
+                + AppCommon.RESPONSE_PARAM + AppCommon.EQUALS_PARAM + authorizationToken
                 ;
         return accessTokenUrl;
     }
@@ -228,7 +206,7 @@ public class WebViewFragment extends Fragment {
                     connection.setRequestMethod("GET");
                     connection.setDoInput(true);
                     connection.connect();
-
+                    int responseCode  = connection.getResponseCode();
                     if (connection.getResponseCode() == 200 || connection.getResponseCode() == 201) {
                         jsonString = new StringBuilder();
                         BufferedReader br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
@@ -257,7 +235,7 @@ public class WebViewFragment extends Fragment {
         private void parseJsonData(JSONObject jsonObject) {
             try {
                 int expiresIn = jsonObject.has("expires_in") ? jsonObject.getInt("expires_in") : 0;
-                String mAccessToken = jsonObject.has("access_token") ? jsonObject.getString("access_token") : null;
+                mAccessToken = jsonObject.has("access_token") ? jsonObject.getString("access_token") : null;
                 Log.d("Access Token ","token = "+mAccessToken );
                 if (expiresIn > 0 && mAccessToken != null) {
                     Calendar calendar = Calendar.getInstance();

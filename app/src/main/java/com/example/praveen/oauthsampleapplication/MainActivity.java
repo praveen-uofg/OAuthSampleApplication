@@ -9,12 +9,21 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
 
 import com.example.praveen.oauthsampleapplication.utils.AppCommon;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener, WebViewFragment.OnFragmentInteractionListener,
         ProfileFragment.OnProfileFragmentInteractionListener{
+
+    private ImageButton mFBButton;
+    private ImageButton mLinkedInButton;
+    private LinearLayout mMainFrame;
+    private FrameLayout mContainer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,6 +40,32 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+        initView();
+    }
+
+    private void initView() {
+        mFBButton = (ImageButton)findViewById(R.id.fbButton);
+        mLinkedInButton = (ImageButton)findViewById(R.id.linkedinButton);
+        mMainFrame = (LinearLayout) findViewById(R.id.mainFrame);
+        mContainer = (FrameLayout)findViewById(R.id.containerFrame);
+        setClickListeners();
+    }
+
+
+    private void setClickListeners() {
+        mFBButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startProfileFragment(AppCommon.FB_NETWORK);
+            }
+        });
+        mLinkedInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                startProfileFragment(AppCommon.LINKEDIN_NETWORK);
+            }
+        });
     }
 
     @Override
@@ -39,7 +74,9 @@ public class MainActivity extends AppCompatActivity
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+                mContainer.setVisibility(View.GONE);
+                mMainFrame.setVisibility(View.VISIBLE);
+                super.onBackPressed();
         }
     }
 
@@ -63,6 +100,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void startProfileFragment(String network) {
+        mMainFrame.setVisibility(View.GONE);
+        mContainer.setVisibility(View.VISIBLE);
         ProfileFragment fragment = ProfileFragment.newInstance(null,network);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.replace(R.id.containerFrame,fragment);
@@ -71,6 +110,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void invokeWebview(String network) {
+        mMainFrame.setVisibility(View.GONE);
+        mContainer.setVisibility(View.VISIBLE);
         WebViewFragment fragment = WebViewFragment.newInstance(network);
         FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
         transaction.add(R.id.containerFrame,fragment);
@@ -79,8 +120,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onFragmentInteraction(String accessToken) {
-            ProfileFragment fragment = ProfileFragment.newInstance(accessToken,"");
+    public void onFragmentInteraction(String accessToken, String network) {
+            ProfileFragment fragment = ProfileFragment.newInstance(accessToken,network);
             FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
             transaction.replace(R.id.containerFrame,fragment);
             transaction.addToBackStack(null);

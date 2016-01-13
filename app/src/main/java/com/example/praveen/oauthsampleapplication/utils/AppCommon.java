@@ -2,6 +2,9 @@ package com.example.praveen.oauthsampleapplication.utils;
 
 import android.graphics.BitmapFactory;
 import android.text.TextUtils;
+import android.util.Base64;
+
+import java.io.UnsupportedEncodingException;
 
 /**
  * Created by praveen on 1/6/2016.
@@ -35,6 +38,12 @@ public class AppCommon {
     public static final String LINKEDIN_TOKEN_EXPIRE_TIME = "linkedin_expire_time";
 
 
+    /*Twitter Constants*/
+    public static final String TWITTER_APP_ID = "uHFCakWgYRwAHaPQGcc8XXgjn";
+    public static final String TWITTER_APP_CLIENT_SECRET = "wCWkdxubZYkWjga6h7fumk9WKnnpEzNyc4xx3PmfhFWJ1PEcov";
+    public static final String TWITTER_APP_OAUTH_BASEURL = "https://api.twitter.com/oauth2/token";
+
+
     public static final String CLIENT_ID_PARAM = "client_id";
     public static final String AMPERSAND_PARAM = "&";
     public static final String QUESTION_MARK = "?";
@@ -55,7 +64,7 @@ public class AppCommon {
     public static String getFBProfileUrl(String accessToken) {
         return FB_ACCESS_TOKEN_URL
                 + "/me"
-                + QUESTION_MARK + "fields" + EQUALS_PARAM + "name,email,birthday,picture.type(large),link,friends"
+                + QUESTION_MARK + "fields" + EQUALS_PARAM + "name,email,birthday,picture.type(large),link,friends,hometown"
                 + AMPERSAND_PARAM + "access_token" + EQUALS_PARAM + accessToken
                 ;
     }
@@ -113,6 +122,24 @@ public class AppCommon {
                 + ":(id,email-address,formatted-name,picture-url,headline,num-connections,site-standard-profile-request)"
                 + QUESTION_MARK +"format"
                 + EQUALS_PARAM + "json";
+    }
+
+    public static String  getTwitterAuthUrl() {
+        return TWITTER_APP_OAUTH_BASEURL
+                + AMPERSAND_PARAM +  "grant_type" + EQUALS_PARAM + "client_credentials"
+                ;
+    }
+
+    public static String getBase64EncodedString() {
+        String result = null;
+        String concat = TWITTER_APP_ID + ":" + TWITTER_APP_CLIENT_SECRET;
+        try {
+            byte[] data = concat.getBytes("UTF-8");
+            result = Base64.encodeToString(data, Base64.DEFAULT);
+        } catch (UnsupportedEncodingException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqH, int reqW) {

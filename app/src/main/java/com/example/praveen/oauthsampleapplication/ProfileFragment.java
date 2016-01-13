@@ -58,14 +58,10 @@ public class ProfileFragment extends Fragment{
     private TextView mEmailTextView;
     private TextView mProfileLinkTextView;
     private LinearLayout mLinearLayout;
+    private TextView mLocationTextView;
+    private TextView mCountTextView;
 
-    private String name;
-    private String birthday;
-    private String email;
-    private String coverUrl;
-    private String relationShip;
     private Bitmap profileBitmap;
-    private String profileLink;
     String accessToken = null;
 
     private UserInfo userInfo;
@@ -162,7 +158,13 @@ public class ProfileFragment extends Fragment{
             mEmailTextView = (TextView)view.findViewById(R.id.profileEmail);
             mBithdayTextView = (TextView)view.findViewById(R.id.profileBirthday);
             mProfileLinkTextView = (TextView)view.findViewById(R.id.profileLink);
+            mLocationTextView = (TextView)view.findViewById(R.id.profileLocation);
+            mCountTextView = (TextView)view.findViewById(R.id.profileConnection);
         }
+    }
+
+    public boolean isFragmentVisible() {
+        return isVisible();
     }
 
     @Override
@@ -254,6 +256,8 @@ public class ProfileFragment extends Fragment{
 
                 JSONObject friendObject = jsonObject.optJSONObject("friends").optJSONObject("summary");
                 userInfo.setFriendCount(friendObject.has("total_count")?friendObject.getInt("total_count"):0);
+                Log.d("Facebook","total count = "+userInfo.getFriendCount());
+                Log.d("Facebook","total count by json = "+friendObject.getInt("total_count"));
 
                 userInfo.setProfileLink(jsonObject.has("link")?jsonObject.getString("link"):null);
             } catch (JSONException e) {
@@ -268,7 +272,10 @@ public class ProfileFragment extends Fragment{
                 userInfo.setCoverUrl(jsonObject.has("pictureUrl")?jsonObject.getString("pictureUrl"):null);
                 userInfo.setFriendCount(jsonObject.has("numConnections")?jsonObject.getInt("numConnections"):0);
                 userInfo.setHeadline(jsonObject.has("headline")?jsonObject.getString("headline"): null);
-                userInfo.setProfileLink(jsonObject.has("siteStandardProfileRequest")?jsonObject.getString("siteStandardProfileRequest"):null);
+                JSONObject profileObject = jsonObject.optJSONObject("siteStandardProfileRequest");
+                userInfo.setProfileLink(profileObject.has("url")?profileObject.getString("url"):null);
+
+                profileBitmap = getProfileImage(userInfo.getCoverUrl());
             } catch (JSONException e) {
                 e.printStackTrace();
             }
@@ -298,14 +305,22 @@ public class ProfileFragment extends Fragment{
         @Override
         protected void onPostExecute(Void aVoid) {
             super.onPostExecute(aVoid);
-            Log.v("ProfileInfo","name = "+name+" email = "+email+" birthday = "+birthday+" cover = "+coverUrl);
 
             mEmailTextView.setText(userInfo.getEmail());
             mNameTextView.setText(userInfo.getName());
-            mBithdayTextView.setText(userInfo.getBirthday());
+            mBithdayTextView.setText(mNetwork.equals(AppCommon.FB_NETWORK) ? "Born on "+ userInfo.getBirthday() :
+                                userInfo.getHeadline());
             String link = "<a href = "+"'"+userInfo.getProfileLink()+"'"+">"+userInfo.getProfileLink()+"</a>";
             mProfileLinkTextView.setText(Html.fromHtml(link));
             mProfileLinkTextView.setMovementMethod(LinkMovementMethod.getInstance());
+            mLocationTextView.setText("From  "+userInfo.getLocation());
+            if (mNetwork.equals(AppCommon.LINKEDIN_NETWORK)) {
+                mLocationTextView.setVisibility(View.GONE);
+            } else {
+                mLocationTextView.setVisibility(View.VISIBLE);
+            }
+            mCountTextView.setText(mNetwork.equals(AppCommon.FB_NETWORK) ? "Total Friends "+String.valueOf(userInfo.getFriendCount()):
+                                "Connections "+String.valueOf(userInfo.getFriendCount()));
 
             if (profileBitmap != null) {
                 mProfileImage.setImageBitmap(profileBitmap);

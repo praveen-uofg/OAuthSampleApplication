@@ -119,7 +119,7 @@ public class WebViewFragment extends Fragment {
      * >Communicating with Other Fragments</a> for more information.
      */
     public interface OnFragmentInteractionListener {
-        void onFragmentInteraction(String accessToken);
+        void onFragmentInteraction(String accessToken, String network);
     }
 
 
@@ -186,7 +186,7 @@ public class WebViewFragment extends Fragment {
         protected void onPostExecute(Boolean status) {
             super.onPostExecute(status);
             if (mAccessToken != null) {
-                mListener.onFragmentInteraction(mAccessToken);
+                mListener.onFragmentInteraction(mAccessToken,ARG_NETWORK);
             }
         }
 

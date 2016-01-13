@@ -11,5 +11,31 @@
     <FrameLayout
         android:id="@+id/containerFrame"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"></FrameLayout>
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:id="@+id/mainFrame"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/fbButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/facebookbutton"/>
+
+    <android.support.v7.widget.AppCompatImageButton
+        android:id="@+id/linkedinButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginTop="50dp"
+        android:background="?android:attr/selectableItemBackground"
+        android:src="@drawable/linkedin_button"/>
+    </LinearLayout>
 </RelativeLayout>
